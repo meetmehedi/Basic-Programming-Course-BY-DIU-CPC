@@ -42,23 +42,28 @@ function updateLectureNumberAuto(dateString) {
   if (!lectureNoInput || !dateString) return;
 
   const msPerDay = 1000 * 60 * 60 * 24;
-  // Base date: July 28, 2026 (Tuesday) -> Start of Lecture 5 week
-  const utcBase = Date.UTC(2026, 6, 28);
+  const lecture12Date = Date.UTC(2026, 9, 6); // Tuesday, October 6, 2026
   
   const [year, month, day] = dateString.split('-').map(Number);
   if (!year || !month || !day) return;
   const utcTarget = Date.UTC(year, month - 1, day);
-  
-  const daysDiff = Math.floor((utcTarget - utcBase) / msPerDay);
-  
-  // Calculate lecture number (minimum 1)
-  const lectureNum = Math.max(1, 5 + Math.floor(daysDiff / 7));
+  const daysDiff = Math.floor((utcTarget - lecture12Date) / msPerDay);
+  const lectureNum = daysDiff > 0
+    ? 12 + Math.ceil(daysDiff / 7)
+    : 12 + Math.floor(daysDiff / 7);
   lectureNoInput.value = lectureNum;
   
   const sessionEl = document.getElementById('todayLecture');
   if (sessionEl) {
     sessionEl.textContent = `Lecture #${lectureNoInput.value || '?'}`;
   }
+}
+
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /* ============================================================
@@ -90,7 +95,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // Set today's date
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const lectureDateInput = document.getElementById('lectureDate');
   if (lectureDateInput) {
     lectureDateInput.value = today;
@@ -131,7 +136,7 @@ function saveRecords() {
    STATS
    ============================================================ */
 function updateStats() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const todayCount = records.filter(r => r.date === today).length;
 
   const el1 = document.getElementById('totalAttendees');
@@ -332,7 +337,7 @@ function handleSubmit(e) {
   resetFeedback();
 
   // Restore defaults
-  const todayDate = new Date().toISOString().split('T')[0];
+  const todayDate = getLocalDateString();
   document.getElementById('lectureDate').value = todayDate;
   updateLectureNumberAuto(todayDate);
 
@@ -627,7 +632,7 @@ function exportCSV() {
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   a.href = url;
   a.download = `diucpc_attendance_${today}.csv`;
   document.body.appendChild(a);
